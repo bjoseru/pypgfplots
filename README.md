@@ -151,4 +151,4 @@ The PNG is delivered via `_repr_html_()` and is therefore also usable in Jupyter
 
 ## License
 
-GPL-3.0-or-later — see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE).
