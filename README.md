@@ -1,7 +1,7 @@
 # pypgfplots
 
 Minimal Python wrapper that renders [pgfplots](https://pgfplots.sourceforge.net/) figures
-as high-quality SVG inside [marimo](https://marimo.io/) notebooks.  Figures are identical
+as high-quality PNG inside [marimo](https://marimo.io/) notebooks.  Figures are identical
 to what you would include in a LaTeX paper or slide deck — because they *are* LaTeX.
 
 **Requires** a working LaTeX installation with `pdflatex` on `$PATH`, plus a PDF→PNG
