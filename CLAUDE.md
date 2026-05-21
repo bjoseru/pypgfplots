@@ -49,10 +49,13 @@ pypgfplots/
 
 **Global state and testing.** `_global.py` holds three module-level lists/dicts. `_reset()` clears all of them. `tests/conftest.py` calls `_reset()` via an `autouse` fixture before and after every test.
 
-**Compiler modularity.** `_compiler.py` exports a single function `compile_tex(tex_source: str) -> CompileResult`. Swapping the backend (e.g. latexmk, tectonic, caching) requires only replacing this function without touching the core classes. The `_core.py` import is:
-```python
-from ._compiler import compile_tex
-```
+**Compiler modularity.** `_compiler.py` exports two public functions:
+- `compile_to_pdf(tex_source)` — `pdflatex → PDF bytes`
+- `pdf_to_png(pdf_bytes, dpi=150)` — PDF bytes → PNG bytes
+
+`_repr_html_` calls both and embeds the PNG as a base64 `<img>` tag.  `save_pdf` calls only `compile_to_pdf`.  `pdf_to_png` tries converters in order: `pdftoppm` (poppler), `gs` (Ghostscript), `mutool` (mupdf), `convert` (ImageMagick).
+
+**Why not SVG?** Both attempted SVG routes failed on TeX Live / macOS: `dvisvgm --pdf` needs `libgs` compiled in (not available); `latex → dvisvgm` (DVI mode) renders pgfplots PostScript specials incorrectly — only text, no plot geometry. PNG via pdflatex is reliable and needs no special dvisvgm build.
 
 **addplot dispatch.** All three addplot methods (`addplot`, `addplot_plus`, `addplot3`) delegate to `_addplot_impl(base_cmd, *args, **kwargs)`.  The `+` variant can be reached via the `base_cmd` (`\addplot+`) or by passing `'+'` as the first positional arg to `addplot`.  `_type=` is a reserved kwarg that inserts a type specifier between the command and the body.
 

@@ -56,7 +56,7 @@ def test_addplot_with_opts():
 
 def test_addplot_type():
     a = Axis()
-    a.addplot(_type="coordinates", "(0,0) (1,1)")
+    a.addplot("(0,0) (1,1)", _type="coordinates")
     assert "\\addplot coordinates{(0,0) (1,1)};" in a.latex()
 
 
@@ -89,19 +89,22 @@ def test_addplot_dict_opts():
 # Addition
 # ---------------------------------------------------------------------------
 
-def test_axis_add_returns_tikzpicture():
+def test_axis_add_returns_axis():
     a = Axis()
     b = Axis(axis_lines="left")
     result = a + b
-    assert isinstance(result, TikzPicture)
+    assert isinstance(result, Axis)
 
 
-def test_axis_add_both_contents_present():
+def test_axis_add_merges_plots_into_single_axis():
     a = Axis(title="A")
     b = Axis(title="B")
     a.addplot("x")
     b.addplot("x^2")
-    tex = (a + b).latex()
+    combined = a + b
+    tex = combined.latex()
+    # both options present, only one axis environment
+    assert tex.count("\\begin{axis}") == 1
     assert "title=A" in tex
     assert "title=B" in tex
     assert "\\addplot{x};" in tex

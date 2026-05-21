@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import base64
 import pathlib
 
 from . import _global as _glob
-from ._compiler import compile_tex
+from ._compiler import compile_to_pdf, pdf_to_png
 from ._options import dict_to_pgf, kwargs_to_pgf, merge_opts
 
 
@@ -21,6 +22,9 @@ class TikzPicture:
         self._tikz_content: str = ""
         self._instance_preamble: list[str] = []
         self._compile_log: str = ""
+        self._cache_key: str | None = None  # latex() string of last successful compile
+        self._cache_pdf: bytes | None = None
+        self._cache_png: bytes | None = None
 
     # ------------------------------------------------------------------
     # Preamble extension
@@ -70,36 +74,39 @@ class TikzPicture:
         )
 
     # ------------------------------------------------------------------
-    # Compilation
+    # Compilation (with PDF + PNG cache)
     # ------------------------------------------------------------------
 
-    def _run_compile(self) -> str:
-        """Compile to SVG, store log, return SVG string."""
-        result = compile_tex(self.latex())
-        self._compile_log = result.log
-        if not result.success:
-            raise RuntimeError(
-                "Compilation failed. Call compile_log() for details."
-            )
-        return result.svg_string
+    def _get_pdf(self) -> bytes:
+        """Return compiled PDF bytes, reusing the cache when the source is unchanged."""
+        src = self.latex()
+        if src != self._cache_key:
+            result = compile_to_pdf(src)
+            self._compile_log = result.log
+            if not result.success:
+                raise RuntimeError(
+                    "Compilation failed. Call compile_log() for details."
+                )
+            self._cache_key = src
+            self._cache_pdf = result.pdf_bytes
+            self._cache_png = None  # PDF changed, PNG cache is stale
+        return self._cache_pdf
 
     def _repr_html_(self) -> str:
-        """Render as SVG for display in marimo and Jupyter."""
-        return self._run_compile()
+        """Render as a PNG image for display in marimo and Jupyter."""
+        pdf = self._get_pdf()
+        if self._cache_png is None:
+            self._cache_png = pdf_to_png(pdf)
+        b64 = base64.b64encode(self._cache_png).decode()
+        return f'<img src="data:image/png;base64,{b64}" style="max-width:100%;height:auto;" />'
 
     # ------------------------------------------------------------------
     # Export
     # ------------------------------------------------------------------
 
     def save_pdf(self, filename: str | pathlib.Path) -> None:
-        """Compile and write a PDF file to *filename*."""
-        result = compile_tex(self.latex())
-        self._compile_log = result.log
-        if not result.pdf_bytes:
-            raise RuntimeError(
-                "PDF compilation failed. Call compile_log() for details."
-            )
-        pathlib.Path(filename).write_bytes(result.pdf_bytes)
+        """Write a PDF to *filename*, reusing a cached compile when possible."""
+        pathlib.Path(filename).write_bytes(self._get_pdf())
 
     def save_tex(self, filename: str | pathlib.Path) -> None:
         """Write the LaTeX source to *filename* (no compilation)."""
@@ -114,7 +121,7 @@ class TikzPicture:
     # ------------------------------------------------------------------
 
     def __add__(self, other: TikzPicture) -> TikzPicture:
-        """Combine two pictures into a new TikzPicture (side by side in one tikzpicture)."""
+        """Combine two pictures into a new TikzPicture."""
         result = TikzPicture()
         result._tikz_content = (
             self._get_tikz_content() + "\n" + other._get_tikz_content()
@@ -210,3 +217,15 @@ class Axis(TikzPicture):
     def addplot3(self, *args, **kwargs) -> None:
         r"""Append an \addplot3 command (same interface as addplot)."""
         self._addplot_impl("\\addplot3", *args, **kwargs)
+
+    def __add__(self, other: Axis) -> Axis:
+        """Return a new Axis with the addplot lines of both merged into one axis.
+
+        Both operands' axis options and instance preambles are concatenated.
+        """
+        result = Axis.__new__(Axis)
+        TikzPicture.__init__(result)
+        result._axis_opts = merge_opts(self._axis_opts, other._axis_opts)
+        result._axis_body = self._axis_body + other._axis_body
+        result._instance_preamble = self._instance_preamble + other._instance_preamble
+        return result

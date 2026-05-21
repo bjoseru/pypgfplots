@@ -4,7 +4,16 @@ Minimal Python wrapper that renders [pgfplots](https://pgfplots.sourceforge.net/
 as high-quality SVG inside [marimo](https://marimo.io/) notebooks.  Figures are identical
 to what you would include in a LaTeX paper or slide deck — because they *are* LaTeX.
 
-**Requires a working LaTeX installation** with `pdflatex` and `dvisvgm` on `$PATH`.
+**Requires** a working LaTeX installation with `pdflatex` on `$PATH`, plus a PDF→PNG
+converter — install one of:
+
+```bash
+brew install poppler       # provides pdftoppm (recommended)
+brew install mupdf-tools   # provides mutool
+brew install imagemagick   # provides convert
+```
+
+Ghostscript (`gs`) is also accepted if already on `$PATH`.
 
 ---
 
@@ -13,7 +22,7 @@ to what you would include in a LaTeX paper or slide deck — because they *are* 
 ### From GitHub with uv (recommended)
 
 ```bash
-uv add git+https://github.com/brueffer/pypgfplots
+uv add git+https://github.com/bjoseru/pypgfplots
 ```
 
 ### Inside a marimo notebook
@@ -22,7 +31,7 @@ Add a cell at the top:
 
 ```python
 import subprocess
-subprocess.run(["uv", "pip", "install", "git+https://github.com/brueffer/pypgfplots"])
+subprocess.run(["uv", "pip", "install", "git+https://github.com/bjoseru/pypgfplots"])
 ```
 
 Or use marimo's package manager sidebar (requires uv backend).
@@ -30,7 +39,7 @@ Or use marimo's package manager sidebar (requires uv backend).
 ### Plain pip
 
 ```bash
-pip install git+https://github.com/brueffer/pypgfplots
+pip install git+https://github.com/bjoseru/pypgfplots
 ```
 
 ---
@@ -42,7 +51,7 @@ from pypgfplots import Axis
 
 a = Axis(title="Parabola", xlabel=r"$x$", ylabel=r"$f(x)$")
 a.addplot(r"x^2", color="red", domain="-2:2", samples=100)
-a  # displays as SVG in marimo
+a  # displays as PNG in marimo
 ```
 
 Combine two axes side by side:
@@ -62,7 +71,7 @@ a + b  # renders both in one tikzpicture
 ```python
 coords = " ".join(f"({x},{x**2})" for x in range(6))
 a = Axis()
-a.addplot(_type="coordinates", coords, mark="*", color="blue")
+a.addplot(coords, _type="coordinates", mark="*", color="blue")
 a
 ```
 
@@ -70,7 +79,7 @@ a
 
 ```python
 a = Axis()
-a.addplot(_type="table", "data.csv", col_sep="comma", x="time", y="value")
+a.addplot("data.csv", _type="table", col_sep="comma", x="time", y="value")
 a
 ```
 
@@ -100,7 +109,31 @@ classoptions("border=5pt")
 a.save_pdf("figure.pdf")   # compile and write PDF
 a.save_tex("figure.tex")   # write LaTeX source (no compilation)
 src = a.latex()             # full standalone source as string
-log = a.compile_log()       # pdflatex + dvisvgm output of last run
+log = a.compile_log()       # pdflatex output of last run
+```
+
+---
+
+## Development
+
+Clone the repo and install in editable mode:
+
+```bash
+git clone https://github.com/bjoseru/pypgfplots
+cd pypgfplots
+uv pip install -e .
+```
+
+Run the tests:
+
+```bash
+uv run --with pytest pytest
+```
+
+Tests that require `pdflatex` and a PDF→PNG converter are skipped automatically if those tools are not on `$PATH`.  To run only the pure-Python unit tests:
+
+```bash
+uv run --with pytest pytest tests/test_core.py tests/test_options.py
 ```
 
 ---
@@ -108,10 +141,11 @@ log = a.compile_log()       # pdflatex + dvisvgm output of last run
 ## Pipeline
 
 ```
-Python API  →  .tex (standalone + pgfplots)  →  pdflatex  →  dvisvgm  →  SVG  →  marimo
+Display:  Python API  →  .tex  →  pdflatex  →  PDF  →  pdftoppm  →  PNG  →  marimo
+PDF:      Python API  →  .tex  →  pdflatex  →  PDF
 ```
 
-The SVG is delivered via `_repr_html_()` and is therefore also usable in Jupyter.
+The PNG is delivered via `_repr_html_()` and is therefore also usable in Jupyter.
 
 ---
 
