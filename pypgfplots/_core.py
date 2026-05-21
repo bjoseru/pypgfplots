@@ -218,6 +218,14 @@ class Axis(TikzPicture):
         r"""Append an \addplot3 command (same interface as addplot)."""
         self._addplot_impl("\\addplot3", *args, **kwargs)
 
+    def addlegendentry(self, text: str) -> None:
+        r"""Append \addlegendentry{text} for the most recently added plot."""
+        self._axis_body += f"\\addlegendentry{{{text}}}\n"
+
+    def legend(self, *entries: str) -> None:
+        r"""Append \legend{entry1, entry2, ...} to set all legend entries at once."""
+        self._axis_body += f"\\legend{{{','.join(entries)}}}\n"
+
     def __add__(self, other: Axis) -> Axis:
         """Return a new Axis with the addplot lines of both merged into one axis.
 

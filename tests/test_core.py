@@ -86,6 +86,25 @@ def test_addplot_dict_opts():
 
 
 # ---------------------------------------------------------------------------
+# Legend
+# ---------------------------------------------------------------------------
+
+def test_addlegendentry():
+    a = Axis()
+    a.addplot("x^2")
+    a.addlegendentry(r"$x^2$")
+    assert "\\addlegendentry{$x^2$}" in a.latex()
+
+
+def test_legend():
+    a = Axis()
+    a.addplot("x")
+    a.addplot("x^2")
+    a.legend("linear", "quadratic")
+    assert "\\legend{linear,quadratic}" in a.latex()
+
+
+# ---------------------------------------------------------------------------
 # Addition
 # ---------------------------------------------------------------------------
 
