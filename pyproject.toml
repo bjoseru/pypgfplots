@@ -1,0 +1,20 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pypgfplots"
+version = "0.1.0"
+description = "Minimal pgfplots wrapper for marimo notebooks"
+license = { text = "GPL-3.0-or-later" }
+requires-python = ">=3.10"
+readme = "README.md"
+
+[project.urls]
+Repository = "https://github.com/brueffer/pypgfplots"
+
+[tool.hatch.build.targets.wheel]
+packages = ["pypgfplots"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

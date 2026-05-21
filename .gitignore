@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+dist/
+build/
+*.egg-info/
+.venv/
+*.pdf
+*.log
+*.aux
+*.fls
+*.fdb_latexmk
