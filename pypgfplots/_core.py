@@ -286,7 +286,6 @@ class Groupplot(Axis):
     The + operator is not supported on Groupplot objects.
     """
 
-    _axis_defaults: dict = {}   # no axis_lines=center default for groupplots
     _is_groupplot: bool = True
 
     def __init__(self, *args, **kwargs) -> None:

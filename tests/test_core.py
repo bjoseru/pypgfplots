@@ -225,9 +225,9 @@ def test_addlegendimage_with_opts():
 # Groupplot
 # ---------------------------------------------------------------------------
 
-def test_groupplot_no_axis_lines_default():
+def test_groupplot_axis_lines_default():
     gp = Groupplot()
-    assert "axis lines" not in gp.latex()
+    assert "axis lines=center" in gp.latex()
 
 
 def test_groupplot_uses_groupplot_env():
