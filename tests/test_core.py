@@ -1,5 +1,5 @@
 import pytest
-from pypgfplots import Axis, TikzPicture, classoptions, pgfplotset, preamble
+from pypgfplots import Axis, Groupplot, TikzPicture, classoptions, pgfplotset, preamble
 
 
 # ---------------------------------------------------------------------------
@@ -200,3 +200,76 @@ def test_save_tex(tmp_path):
     a.save_tex(out)
     content = out.read_text()
     assert "\\addplot{x^2};" in content
+
+
+# ---------------------------------------------------------------------------
+# addlegendimage
+# ---------------------------------------------------------------------------
+
+def test_addlegendimage_no_opts():
+    a = Axis()
+    a.addlegendimage()
+    assert "\\addlegendimage\n" in a.latex()
+
+
+def test_addlegendimage_with_opts():
+    a = Axis()
+    a.addlegendimage(color="red", mark="*")
+    tex = a.latex()
+    assert "\\addlegendimage[" in tex
+    assert "color=red" in tex
+    assert "mark=*" in tex
+
+
+# ---------------------------------------------------------------------------
+# Groupplot
+# ---------------------------------------------------------------------------
+
+def test_groupplot_no_axis_lines_default():
+    gp = Groupplot()
+    assert "axis lines" not in gp.latex()
+
+
+def test_groupplot_uses_groupplot_env():
+    gp = Groupplot(group_style="columns=2")
+    tex = gp.latex()
+    assert "\\begin{groupplot}" in tex
+    assert "\\end{groupplot}" in tex
+    assert "\\begin{axis}" not in tex
+
+
+def test_groupplot_library_in_preamble():
+    gp = Groupplot()
+    assert "\\usepgfplotslibrary{groupplots}" in gp.latex()
+
+
+def test_groupplot_nextgroupplot():
+    gp = Groupplot(group_style="columns=2")
+    gp.nextgroupplot(title="First")
+    gp.addplot("x^2")
+    gp.nextgroupplot(title="Second")
+    gp.addplot("x^3")
+    tex = gp.latex()
+    assert "\\nextgroupplot[title=First]" in tex
+    assert "\\nextgroupplot[title=Second]" in tex
+    assert "\\addplot{x^2};" in tex
+    assert "\\addplot{x^3};" in tex
+
+
+def test_groupplot_inherits_axis_methods():
+    gp = Groupplot()
+    gp.nextgroupplot()
+    gp.addplot("x", color="red")
+    gp.addlegendentry("linear")
+    tex = gp.latex()
+    assert "\\addplot[color=red]{x};" in tex
+    assert "\\addlegendentry{linear}" in tex
+
+
+def test_groupplot_add_raises():
+    gp = Groupplot()
+    a = Axis()
+    with pytest.raises(TypeError):
+        _ = gp + a
+    with pytest.raises(TypeError):
+        _ = a + gp

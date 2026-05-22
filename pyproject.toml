@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pypgfplots"
-version = "0.1.8"
+version = "0.1.9"
 description = "Minimal pgfplots wrapper for marimo notebooks"
 license = { text = "MIT" }
 requires-python = ">=3.10"

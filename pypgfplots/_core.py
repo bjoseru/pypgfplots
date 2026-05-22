@@ -1,4 +1,4 @@
-"""Core classes: TikzPicture and Axis."""
+"""Core classes: TikzPicture, Axis, Groupplot."""
 
 from __future__ import annotations
 
@@ -8,6 +8,23 @@ import pathlib
 from . import _global as _glob
 from ._compiler import compile_to_pdf, pdf_to_png
 from ._options import dict_to_pgf, kwargs_to_pgf, merge_opts
+
+
+def _parse_opts(args: tuple, kwargs: dict, defaults: dict) -> str:
+    """Build a pgfplots option string from positional args, kwargs, and defaults.
+
+    *defaults* are applied only when the key is absent from *kwargs*.
+    Dict positional args bypass key transformation; string positional args are
+    included verbatim.
+    """
+    raw_opts: list[str] = []
+    for arg in args:
+        if isinstance(arg, dict):
+            raw_opts.append(dict_to_pgf(arg))
+        elif isinstance(arg, str):
+            raw_opts.append(arg)
+    merged = {**defaults, **kwargs}
+    return merge_opts(kwargs_to_pgf(merged), *raw_opts)
 
 
 class TikzPicture:
@@ -35,7 +52,7 @@ class TikzPicture:
         self._instance_preamble.append(text)
 
     # ------------------------------------------------------------------
-    # Content hook (overridden by Axis)
+    # Content hook (overridden by Axis / Groupplot)
     # ------------------------------------------------------------------
 
     def _get_tikz_content(self) -> str:
@@ -144,19 +161,15 @@ class Axis(TikzPicture):
     explicitly overridden.
     """
 
+    # Subclasses can override to change or suppress defaults.
+    _axis_defaults: dict = {"axis_lines": "center"}
+
+    # Set to True in subclasses that must not be combined with +.
+    _is_groupplot: bool = False
+
     def __init__(self, *args, **kwargs) -> None:
         super().__init__()
-
-        # Collect raw string / dict positional args as extra option fragments
-        raw_opts: list[str] = []
-        for arg in args:
-            if isinstance(arg, dict):
-                raw_opts.append(dict_to_pgf(arg))
-            elif isinstance(arg, str):
-                raw_opts.append(arg)
-
-        kwargs.setdefault("axis_lines", "center")
-        self._axis_opts: str = merge_opts(kwargs_to_pgf(kwargs), *raw_opts)
+        self._axis_opts: str = _parse_opts(args, kwargs, self._axis_defaults)
         self._axis_body: str = ""
 
     # ------------------------------------------------------------------
@@ -222,6 +235,13 @@ class Axis(TikzPicture):
         r"""Append \addlegendentry{text} for the most recently added plot."""
         self._axis_body += f"\\addlegendentry{{{text}}}\n"
 
+    def addlegendimage(self, *args, **kwargs) -> None:
+        r"""Append \addlegendimage[options] (phantom legend entry with custom style)."""
+        extra_opts = [dict_to_pgf(a) for a in args if isinstance(a, dict)]
+        opts = merge_opts(kwargs_to_pgf(kwargs), *extra_opts)
+        opts_str = f"[{opts}]" if opts else ""
+        self._axis_body += f"\\addlegendimage{opts_str}\n"
+
     def legend(self, *entries: str) -> None:
         r"""Append \legend{entry1, entry2, ...} to set all legend entries at once."""
         self._axis_body += f"\\legend{{{','.join(entries)}}}\n"
@@ -230,10 +250,46 @@ class Axis(TikzPicture):
         """Return a new Axis with the addplot lines of both merged into one axis.
 
         Both operands' axis options and instance preambles are concatenated.
+        Raises TypeError if either operand is a Groupplot.
         """
+        if self._is_groupplot or other._is_groupplot:
+            raise TypeError("Groupplot does not support the + operator")
         result = Axis.__new__(Axis)
         TikzPicture.__init__(result)
         result._axis_opts = merge_opts(self._axis_opts, other._axis_opts)
         result._axis_body = self._axis_body + other._axis_body
         result._instance_preamble = self._instance_preamble + other._instance_preamble
         return result
+
+
+class Groupplot(Axis):
+    r"""A pgfplots groupplot environment inside a tikzpicture.
+
+    Inherits all addplot*, addlegendentry, legend, and addlegendimage methods
+    from Axis.  Use nextgroupplot() to start each subplot; subsequent addplot
+    calls append to the current subplot.
+
+    Automatically adds \usepgfplotslibrary{groupplots} to the preamble.
+
+    The + operator is not supported on Groupplot objects.
+    """
+
+    _axis_defaults: dict = {}   # no axis_lines=center default for groupplots
+    _is_groupplot: bool = True
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._instance_preamble.append(r"\usepgfplotslibrary{groupplots}")
+
+    def nextgroupplot(self, *args, **kwargs) -> None:
+        r"""Append \nextgroupplot[options] to start the next subplot."""
+        opts = _parse_opts(args, kwargs, {})
+        opts_str = f"[{opts}]" if opts else ""
+        self._axis_body += f"\\nextgroupplot{opts_str}\n"
+
+    def _get_tikz_content(self) -> str:
+        return (
+            f"\\begin{{groupplot}}[{self._axis_opts}]\n"
+            f"{self._axis_body}"
+            f"\\end{{groupplot}}\n"
+        )
