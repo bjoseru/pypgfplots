@@ -91,6 +91,39 @@ a.addplot3(r"x^2 + y^2", domain="-2:2", samples=30)
 a
 ```
 
+### Grouped subplots
+
+`Groupplot` produces a pgfplots `groupplot` environment.  Call `nextgroupplot()` before each subplot; all `addplot*`, `addlegendentry`, and `legend` methods work exactly as on `Axis`.
+
+```python
+from pypgfplots import Groupplot
+
+gp = Groupplot(group_style="columns=2, rows=1", width="0.45\\textwidth")
+gp.nextgroupplot(title="Sine")
+gp.addplot(r"sin(deg(x))", domain="0:6.28", color="blue")
+gp.addlegendentry("sin")
+
+gp.nextgroupplot(title="Cosine")
+gp.addplot(r"cos(deg(x))", domain="0:6.28", color="red")
+gp.addlegendentry("cos")
+
+gp  # displays as PNG in marimo
+```
+
+Options passed to `Groupplot(...)` become `\begin{groupplot}[...]` options; options passed to `nextgroupplot(...)` become per-subplot options.  The `\usepgfplotslibrary{groupplots}` line is added to the preamble automatically.
+
+### Legend images
+
+`addlegendimage` inserts a phantom legend entry with a custom appearance — useful when the auto-generated swatch does not match what you want:
+
+```python
+a = Axis()
+a.addplot(r"x^2", color="red")
+a.addlegendimage(color="red", mark="*")
+a.addlegendentry(r"$x^2$")
+a
+```
+
 ### Global settings
 
 ```python
