@@ -124,7 +124,7 @@ a
 ```python
 from pypgfplots import Groupplot
 
-gp = Groupplot(group_style="columns=2, rows=1", width="0.45\\textwidth")
+gp = Groupplot(group_style="{columns=2, rows=1}", width="0.45\\textwidth")
 gp.nextgroupplot(title="Sine")
 gp.addplot(r"sin(deg(x))", domain="0:6.28", color="blue")
 gp.addlegendentry("sin")
@@ -137,6 +137,8 @@ gp  # displays as PNG in marimo
 ```
 
 Options passed to `Groupplot(...)` become `\begin{groupplot}[...]` options; options passed to `nextgroupplot(...)` become per-subplot options.  The `\usepgfplotslibrary{groupplots}` line is added to the preamble automatically.
+
+> **Note on nested key-value options:** pgfplots options whose values are themselves key-value lists (such as `group style`) must be wrapped in braces so the comma is not interpreted as an option separator: `group_style="{columns=2, rows=1}"`.  The same applies to any option like `legend style`, `axis background/.style`, etc.
 
 ### Legend images
 
