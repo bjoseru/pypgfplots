@@ -26,7 +26,7 @@ def _():
 def _(mo):
     mo.md(
         r"""
-        # pypgfplots
+        # pypgfplots — version check
 
         Minimal Python wrapper that renders [pgfplots](https://pgfplots.sourceforge.net/)
         figures as high-quality PNG images inside [marimo](https://marimo.io/) notebooks.
