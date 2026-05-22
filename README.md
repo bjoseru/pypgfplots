@@ -1,5 +1,7 @@
 # pypgfplots
 
+[![Open in molab](https://molab.marimo.io/molab-shield.svg)](https://molab.marimo.io/notebooks/nb_zAMdaoX6YdspQ27p68YBuT)
+
 Minimal Python wrapper that renders [pgfplots](https://pgfplots.sourceforge.net/) figures
 as high-quality PNG inside [marimo](https://marimo.io/) notebooks.  Figures are identical
 to what you would include in a LaTeX paper or slide deck — because they *are* LaTeX.
