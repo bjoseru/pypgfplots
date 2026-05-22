@@ -66,6 +66,32 @@ b.addplot(r"cos(deg(x))", domain="0:6.28")
 a + b  # renders both in one tikzpicture
 ```
 
+### Raw TikZ statements
+
+`tikz(line)` appends a verbatim TikZ statement to the environment body — available on `TikzPicture`, `Axis`, and `Groupplot`.  On `Axis`/`Groupplot` the statement lands inside the axis environment, so pgfplots coordinate systems such as `(axis cs:…)` work as expected.
+
+Pure geometric drawing with `TikzPicture`:
+
+```python
+from pypgfplots import TikzPicture
+
+p = TikzPicture()
+p.tikz(r"\fill[red]    (0,0) rectangle (2,2);")          # Bauhaus square
+p.tikz(r"\fill[blue]   (3,1) circle (1);")               # Bauhaus disc
+p.tikz(r"\fill[yellow] (5,0) -- (7,0) -- (6,1.732) -- cycle;")  # Bauhaus triangle
+p
+```
+
+Annotating a plot with a dashed reference line and a label:
+
+```python
+a = Axis(xlabel=r"$x$", ylabel=r"$f(x)$")
+a.addplot(r"x^2", domain="-2:2", color="blue")
+a.tikz(r"\draw[dashed, gray] (axis cs:-2,1) -- (axis cs:2,1);")
+a.tikz(r"\node[right] at (axis cs:2,1) {$y=1$};")
+a
+```
+
 ### Coordinate data
 
 ```python

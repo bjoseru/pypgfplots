@@ -273,3 +273,40 @@ def test_groupplot_add_raises():
         _ = gp + a
     with pytest.raises(TypeError):
         _ = a + gp
+
+
+# ---------------------------------------------------------------------------
+# tikz() raw statements
+# ---------------------------------------------------------------------------
+
+def test_tikzpicture_tikz():
+    from pypgfplots import TikzPicture
+    p = TikzPicture()
+    p.tikz(r"\fill[red] (0,0) rectangle (2,2);")
+    tex = p.latex()
+    assert r"\fill[red] (0,0) rectangle (2,2);" in tex
+    assert r"\begin{axis}" not in tex
+
+
+def test_axis_tikz_inside_axis():
+    a = Axis()
+    a.tikz(r"\draw[dashed] (0,0) -- (1,1);")
+    tex = a.latex()
+    assert r"\draw[dashed] (0,0) -- (1,1);" in tex
+    # must appear inside the axis environment
+    axis_start = tex.index(r"\begin{axis}")
+    axis_end = tex.index(r"\end{axis}")
+    draw_pos = tex.index(r"\draw[dashed]")
+    assert axis_start < draw_pos < axis_end
+
+
+def test_groupplot_tikz_inside_groupplot():
+    gp = Groupplot()
+    gp.nextgroupplot()
+    gp.tikz(r"\node at (axis cs:0,0) {O};")
+    tex = gp.latex()
+    assert r"\node at (axis cs:0,0) {O};" in tex
+    gp_start = tex.index(r"\begin{groupplot}")
+    gp_end = tex.index(r"\end{groupplot}")
+    node_pos = tex.index(r"\node")
+    assert gp_start < node_pos < gp_end

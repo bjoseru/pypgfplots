@@ -52,6 +52,14 @@ class TikzPicture:
         self._instance_preamble.append(text)
 
     # ------------------------------------------------------------------
+    # Raw TikZ content
+    # ------------------------------------------------------------------
+
+    def tikz(self, line: str) -> None:
+        """Append a raw TikZ statement to the tikzpicture body."""
+        self._tikz_content += line + "\n"
+
+    # ------------------------------------------------------------------
     # Content hook (overridden by Axis / Groupplot)
     # ------------------------------------------------------------------
 
@@ -182,6 +190,10 @@ class Axis(TikzPicture):
             f"{self._axis_body}"
             f"\\end{{axis}}\n"
         )
+
+    def tikz(self, line: str) -> None:
+        """Append a raw TikZ statement inside the axis environment."""
+        self._axis_body += line + "\n"
 
     # ------------------------------------------------------------------
     # addplot helpers
